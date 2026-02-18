@@ -106,12 +106,6 @@ const App: React.FC = () => {
     setCurrentPage('home');
   };
 
-  // 🔴 FIX — open login when clicking Volunteer/Admin
-  const handleFooterRoleSelect = (target: UserRole) => {
-    setLoginTargetRole(target);
-    setCurrentPage('login');
-  };
-
   const handleDonateClick = (r: Recipient) => {
     if (!userProfile.isLoggedIn) {
       setLoginTargetRole(UserRole.DONOR);
@@ -171,7 +165,7 @@ const App: React.FC = () => {
 
       <main className="flex-grow">{renderContent()}</main>
 
-      {currentPage !== 'login' && <Footer onRoleSelect={handleFooterRoleSelect} onNavigate={handleNavbarNavigate} />}
+      {currentPage !== 'login' && <Footer onRoleSelect={setLoginTargetRole} onNavigate={handleNavbarNavigate} />}
 
       {toastMessage && <Toast message={toastMessage} onClose={() => setToastMessage(null)} />}
 
