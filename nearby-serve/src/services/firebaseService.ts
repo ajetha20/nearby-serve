@@ -1,10 +1,11 @@
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore"
+import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import { Recipient, DeliveryRequest } from "../types";
 
-// COLLECTIONS
+// COLLECTION REFERENCES
 const recipientsRef = collection(db, "recipients");
 const requestsRef = collection(db, "requests");
+
 
 // ---------- RECIPIENTS ----------
 export const getRecipients = async (): Promise<Recipient[]> => {
@@ -24,6 +25,7 @@ export const deleteRecipient = async (id: string) => {
   await deleteDoc(doc(db, "recipients", id));
 };
 
+
 // ---------- REQUESTS ----------
 export const getRequests = async (): Promise<DeliveryRequest[]> => {
   const snap = await getDocs(requestsRef);
@@ -32,4 +34,31 @@ export const getRequests = async (): Promise<DeliveryRequest[]> => {
 
 export const addRequest = async (data: DeliveryRequest) => {
   await addDoc(requestsRef, data);
+};
+
+
+// ---------- REALTIME LISTENERS ----------
+
+// Live recipients updates (map pins instantly update)
+export const listenRecipients = (callback: (data: Recipient[]) => void) => {
+  return onSnapshot(recipientsRef, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Recipient[];
+
+    callback(data);
+  });
+};
+
+// Live donation requests updates
+export const listenRequests = (callback: (data: DeliveryRequest[]) => void) => {
+  return onSnapshot(requestsRef, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as DeliveryRequest[];
+
+    callback(data);
+  });
 };
