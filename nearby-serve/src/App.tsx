@@ -30,15 +30,20 @@ const App: React.FC = () => {
   const [selectedRecipientForDonation, setSelectedRecipientForDonation] = useState<Recipient | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // 🔥 LOAD FROM FIREBASE
+  // 🔥 REALTIME FIREBASE LISTENERS
   useEffect(() => {
-    const loadData = async () => {
-      const rec = await firebaseService.getRecipients();
-      const req = await firebaseService.getRequests();
-      setRecipients(rec);
-      setRequests(req);
+    const unsubRecipients = firebaseService.listenRecipients((data) => {
+      setRecipients(data);
+    });
+
+    const unsubRequests = firebaseService.listenRequests((data) => {
+      setRequests(data);
+    });
+
+    return () => {
+      unsubRecipients();
+      unsubRequests();
     };
-    loadData();
   }, []);
 
   // LOCATION
@@ -71,9 +76,6 @@ const App: React.FC = () => {
     };
 
     await firebaseService.addRequest(newReq);
-    const updated = await firebaseService.getRequests();
-    setRequests(updated);
-
     setSelectedRecipientForDonation(null);
     setCurrentPage('history');
   };
@@ -81,20 +83,14 @@ const App: React.FC = () => {
   // RECIPIENT ADD
   const handleAddRecipient = async (newR: Recipient) => {
     await firebaseService.addRecipient(newR);
-    const updated = await firebaseService.getRecipients();
-    setRecipients(updated);
   };
 
   const handleUpdateRecipient = async (updatedR: Recipient) => {
     await firebaseService.updateRecipient(updatedR.id, updatedR);
-    const updated = await firebaseService.getRecipients();
-    setRecipients(updated);
   };
 
   const handleDeleteRecipient = async (id: string) => {
     await firebaseService.deleteRecipient(id);
-    const updated = await firebaseService.getRecipients();
-    setRecipients(updated);
   };
 
   const handleLoginSuccess = (profile: UserProfile) => {
