@@ -1,16 +1,34 @@
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  QuerySnapshot,
+  DocumentData
+} from "firebase/firestore";
+
 import { db } from "../firebase";
 import { Recipient, DeliveryRequest } from "../types";
 
-// COLLECTION REFERENCES
+// COLLECTIONS
 const recipientsRef = collection(db, "recipients");
 const requestsRef = collection(db, "requests");
 
 
-// ---------- RECIPIENTS ----------
-export const getRecipients = async (): Promise<Recipient[]> => {
-  const snap = await getDocs(recipientsRef);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Recipient));
+// ================= RECIPIENTS =================
+
+// 🔴 LIVE LISTENER (MAIN MAGIC)
+export const listenRecipients = (callback: (data: Recipient[]) => void) => {
+  return onSnapshot(recipientsRef, (snap: QuerySnapshot<DocumentData>) => {
+    const list: Recipient[] = snap.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    })) as Recipient[];
+
+    callback(list);
+  });
 };
 
 export const addRecipient = async (data: Recipient) => {
@@ -26,39 +44,20 @@ export const deleteRecipient = async (id: string) => {
 };
 
 
-// ---------- REQUESTS ----------
-export const getRequests = async (): Promise<DeliveryRequest[]> => {
-  const snap = await getDocs(requestsRef);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as DeliveryRequest));
+
+// ================= REQUESTS =================
+
+export const listenRequests = (callback: (data: DeliveryRequest[]) => void) => {
+  return onSnapshot(requestsRef, (snap: QuerySnapshot<DocumentData>) => {
+    const list: DeliveryRequest[] = snap.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    })) as DeliveryRequest[];
+
+    callback(list);
+  });
 };
 
 export const addRequest = async (data: DeliveryRequest) => {
   await addDoc(requestsRef, data);
-};
-
-
-// ---------- REALTIME LISTENERS ----------
-
-// Live recipients updates (map pins instantly update)
-export const listenRecipients = (callback: (data: Recipient[]) => void) => {
-  return onSnapshot(recipientsRef, (snapshot) => {
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as Recipient[];
-
-    callback(data);
-  });
-};
-
-// Live donation requests updates
-export const listenRequests = (callback: (data: DeliveryRequest[]) => void) => {
-  return onSnapshot(requestsRef, (snapshot) => {
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as DeliveryRequest[];
-
-    callback(data);
-  });
 };
