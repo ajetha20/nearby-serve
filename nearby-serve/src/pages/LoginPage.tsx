@@ -3,6 +3,7 @@ import { UserProfile, UserRole } from '../types';
 import { ArrowRight, LogIn, Lock, Mail, ChevronLeft, Shield, HeartHandshake, User, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth } from '../firebase';
+import * as firebaseService from '../services/firebaseService';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 interface LoginPageProps {
@@ -67,32 +68,34 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin, targetRole = User
 
       // LOGIN
       else if (mode === 'login') {
-
         const cred = await signInWithEmailAndPassword(
-          auth,
-          formData.email,
-          formData.password
-        );
+  auth,
+  formData.email,
+  formData.password
+);
 
-        let role = UserRole.DONOR;
+// 🔥 get role from firestore
+const userDoc = await firebaseService.getUserProfile(cred.user.uid);
 
-        if (formData.email === "admin@annadaan.org") role = UserRole.ADMIN;
-        if (formData.email === "vikram@annadaan.org") role = UserRole.VOLUNTEER;
+if (!userDoc) throw new Error("User not registered in system");
 
-        if (role !== targetRole) {
-          throw new Error(`Not allowed for ${targetRole}`);
-        }
+const role = userDoc.role;
 
-        const profile: UserProfile = {
-          id: cred.user.uid,
-          name: cred.user.email?.split('@')[0] || "User",
-          email: cred.user.email!,
-          role,
-          isLoggedIn: true
-        };
+if (role !== targetRole) {
+  throw new Error(`You are not registered as ${targetRole}`);
+}
 
-        onLogin(profile);
+const profile: UserProfile = {
+  id: cred.user.uid,
+  name: userDoc.name,
+  email: cred.user.email!,
+  role,
+  isLoggedIn: true
+};
+
+onLogin(profile);
       }
+
 
       // FORGOT
       else {
