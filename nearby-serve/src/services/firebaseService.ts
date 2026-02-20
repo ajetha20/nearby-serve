@@ -151,8 +151,6 @@ export const loginVolunteer = async (email: string) => {
   });
 };
 // ================= USER PROFILE =================
-import { getDoc } from "firebase/firestore";
-
 export const getUserProfile = async (uid: string) => {
   const snap = await getDoc(doc(db, "users", uid));
 
